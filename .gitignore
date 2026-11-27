@@ -1,0 +1,23 @@
+# 비밀번호 등 개인 설정 (절대 커밋 금지)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# 에디터 / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# DB 덤프, 로그
+*.log
+dump*.sql

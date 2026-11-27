@@ -1,0 +1,9 @@
+# 줄바꿈을 LF로 통일 (Windows/Mac 혼용 시 diff 꼬임 방지)
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.docx binary
+*.pptx binary
+*.xlsx binary
