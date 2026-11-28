@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag %}
+{% block title %}직원관리{% endblock %}
+{% block content %}
+{% call page_header('직원관리', '직원 계정과 권한을 관리합니다. 처리 이력 보존을 위해 계정은 삭제하지 않고 비활성화합니다.') %}
+  <a class="btn primary" href="{{ url_for('admin.employee_form') }}">{{ icon('plus', 18) }} 직원 등록</a>
+{% endcall %}
+<div class="card">
+  <table>
+    <tr><th>이름</th><th>아이디</th><th>권한</th><th>상태</th><th>연락처</th><th>최종 로그인</th><th>최근 수정</th><th></th></tr>
+    {% for e in rows %}
+    <tr class="{{ 'dim' if e.status != 'ACTIVE' }}"><td class="strong">{{ e.emp_name }}{% if e.emp_id == g.user.emp_id %} <span class="muted">(나)</span>{% endif %}</td>
+      <td>{{ e.login_id }}</td><td>{{ tag('blue' if e.role == 'OWNER' else 'gray', e.role|label) }}</td>
+      <td>{{ tag('ok', '활성') if e.status == 'ACTIVE' else tag('gray', '비활성') }}
+        {% if e.unlock_at and e.unlock_at > now %} {{ tag('expired', '잠김') }}{% endif %}</td>
+      <td>{{ e.phone or '-' }}</td><td>{{ e.last_login_at|dt if e.last_login_at else '-' }}</td>
+      <td>{{ e.updated_name or '-' }}<span class="code">{{ e.updated_at|dt if e.updated_at else '' }}</span></td>
+      <td><a class="btn sm" href="{{ url_for('admin.employee_form', eid=e.emp_id) }}">수정</a></td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

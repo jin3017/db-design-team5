@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, tag, confirm %}
+{% block title %}소비기한·폐기{% endblock %}
+{% block content %}
+{{ page_header('소비기한·폐기', '소비기한이 ' ~ days ~ '일 이내로 남았거나 지난 입고 묶음입니다. 경과 재고는 판매할 수 없습니다.') }}
+{% include "stock/_tabs.html" %}
+
+<div class="card">
+  <div class="card-head"><h2>소비기한 알림</h2>
+    <span>{{ tag('expired', '경과 ' ~ expired ~ '건') }} {{ tag('imminent', '임박 ' ~ (lots|length - expired) ~ '건') }}</span></div>
+  <table>
+    <tr><th>상품 / LOT</th><th>소비기한</th><th>남은 일수</th><th class="num">잔여</th><th style="width:120px">처리</th></tr>
+    {% for l in lots %}
+    <tr>
+      <td class="strong">{{ l.product_name }}<span class="code">{{ l|lot_no }}</span></td>
+      <td>{{ l.expiry_date|dt }}</td>
+      <td>{% if l.days_left < 0 %}{{ tag('expired', '경과 ' ~ (-l.days_left) ~ '일') }}
+          {% elif l.days_left == 0 %}{{ tag('imminent', '오늘 마감') }}
+          {% else %}{{ tag('imminent', 'D-' ~ l.days_left) }}{% endif %}</td>
+      <td class="num strong">{{ l.remain_qty }}개</td>
+      <td><button type="button" class="btn sm {{ 'danger' if l.days_left < 0 }}" data-open="dsp-{{ l.lot_id }}">폐기</button></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5"><div class="empty">소비기한이 임박한 상품이 없습니다.</div></td></tr>
+    {% endfor %}
+  </table>
+  <div class="card-foot"><span class="muted">소비기한 관리 상품만 표시 · 경과 LOT는 판매 불가</span></div>
+</div>
+
+{# 폐기 확인 대화상자 (시안: 중요 작업 확인) #}
+{% for l in lots %}
+{% call confirm('dsp-' ~ l.lot_id, '폐기 확인', ('소비기한이 경과한 재고를 폐기할까요?' if l.days_left < 0 else '이 재고를 폐기할까요?'),
+                url_for('stock.lot_dispose', lot_id=l.lot_id), '폐기', '폐기 후 재고가 차감되며 되돌릴 수 없습니다.', danger=True) %}
+  {{ l.product_name }} · 잔여 {{ l.remain_qty }}개<br>입고 묶음번호 {{ l|lot_no }}<br>소비기한 {{ l.expiry_date|dt }}
+  <input type="hidden" name="back" value="expiry">
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;line-height:normal">
+    <div><label class="req">폐기수량</label><input type="number" name="disposal_qty" min="1" max="{{ l.remain_qty }}" value="{{ l.remain_qty }}" required></div>
+    <div><label class="req">폐기사유</label><select name="reason_type">
+      {% for c in reasons %}<option value="{{ c }}" {{ 'selected' if c == 'EXPIRED' and l.days_left < 0 }}>{{ c|label }}</option>{% endfor %}</select></div>
+  </div>
+  <div style="margin-top:10px;line-height:normal"><label>상세사유 · 기타 선택 시 필수</label><input name="reason_detail" maxlength="255"></div>
+{% endcall %}
+{% endfor %}
+{% endblock %}

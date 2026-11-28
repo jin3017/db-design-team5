@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header %}
+{% block title %}{{ '상품 수정' if p else '상품 등록' }}{% endblock %}
+{% block content %}
+{{ page_header('상품 수정' if p else '상품 등록', '필수 항목(*)을 입력하세요. 판매가격을 바꾸면 이후 판매부터 적용됩니다.') }}
+<form class="card card-body" method="post" style="max-width:760px">
+  <div class="form-grid">
+    <div style="grid-column:1/-1"><label class="req">상품명</label><input name="product_name" value="{{ p.product_name if p else '' }}" maxlength="100" required></div>
+    <div><label class="req">바코드</label><input name="barcode" value="{{ p.barcode if p else '' }}" maxlength="50" required></div>
+    <div><label class="req">카테고리</label><select name="category_id" required><option value="">선택</option>
+      {% for c in cats if c.is_active or (p and c.category_id == p.category_id) %}
+      <option value="{{ c.category_id }}" {{ 'selected' if p and c.category_id == p.category_id }}>{{ c.category_name }}{{ '' if c.is_active else ' (사용 중지)' }}</option>{% endfor %}</select></div>
+    <div><label class="req">매입가격 (원)</label><input type="number" min="0" name="purchase_price" value="{{ p.purchase_price if p else '' }}" required></div>
+    <div><label class="req">판매가격 (원)</label><input type="number" min="0" name="sale_price" value="{{ p.sale_price if p else '' }}" required></div>
+    <div><label class="req">안전재고 (낱개)</label><input type="number" min="0" name="safety_stock" value="{{ p.safety_stock if p else '' }}" required></div>
+    <div><label><input type="checkbox" name="expiry_managed" value="1" {{ 'checked' if not p or p.expiry_managed }}> 소비기한 관리</label>
+      <span class="muted">생활용품처럼 소비기한이 없으면 해제</span></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:24px">
+    <button class="btn primary" type="submit">저장</button><a class="btn" href="{{ url_for('master.products') }}">취소</a></div>
+</form>
+{% endblock %}

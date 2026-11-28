@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, tag %}
+{% block title %}카테고리{% endblock %}
+{% block content %}
+{% call page_header('카테고리', '사용 중인 상품이 있는 카테고리는 삭제 대신 사용 중지합니다.') %}
+  <a class="btn" href="{{ url_for('master.products') }}">상품관리</a>
+{% endcall %}
+<form class="card card-body form-row" method="post" style="max-width:560px">
+  <div><label class="req">새 카테고리명</label><input name="category_name" maxlength="50" required></div>
+  <button class="btn primary" style="flex:none">추가</button>
+</form>
+<div class="card">
+  <table>
+    <tr><th>카테고리명</th><th class="num">상품 수</th><th>상태</th><th style="width:360px">이름 변경 / 사용 여부</th></tr>
+    {% for c in rows %}
+    <tr class="{{ 'dim' if not c.is_active }}"><td class="strong">{{ c.category_name }}</td><td class="num">{{ c.product_count }}</td>
+      <td>{{ tag('ok', '사용') if c.is_active else tag('gray', '사용 중지') }}</td>
+      <td><form class="form-row" method="post" style="margin:0">
+          <input type="hidden" name="category_id" value="{{ c.category_id }}">
+          <div><input name="category_name" value="{{ c.category_name }}" maxlength="50" required></div>
+          <button class="btn sm" style="flex:none">변경</button></form>
+        <form method="post" action="{{ url_for('master.category_toggle', cid=c.category_id) }}" style="margin-top:6px">
+          <button class="btn sm">{{ '사용 중지' if c.is_active else '다시 사용' }}</button></form></td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

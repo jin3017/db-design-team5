@@ -1,0 +1,81 @@
+{# 공용 UI 매크로: 아이콘, 페이지 제목, 상태 태그, 알림 박스, 확인 대화상자 #}
+
+{% macro icon(name, size=20) -%}
+<svg class="ic" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'store' -%}<path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v7h14v-7"/><path d="M10 20v-4h4v4"/>
+{%- elif name == 'scan' -%}<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 12h8"/>
+{%- elif name == 'barcode' -%}<path d="M4 7V5h2M18 5h2v2M20 17v2h-2M6 19H4v-2"/><path d="M8 8v8M11 8v8M14 8v8M17 8v8"/>
+{%- elif name == 'box-in' -%}<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 4-2.2"/><path d="M12 13v8"/><path d="M19 14v6M16 17h6"/>
+{%- elif name == 'boxes' -%}<path d="M7 12l-4 2.3v4.4L7 21l4-2.3v-4.4z"/><path d="M17 12l-4 2.3v4.4l4 2.3 4-2.3v-4.4z"/><path d="M12 3L8 5.3v4.4l4 2.3 4-2.3V5.3z"/>
+{%- elif name == 'clipboard' -%}<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6M9 14h6M9 18h3"/>
+{%- elif name == 'undo' -%}<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>
+{%- elif name == 'package' -%}<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/><path d="M7.5 5.5l9 5"/>
+{%- elif name == 'truck' -%}<rect x="2" y="6" width="12" height="10" rx="1"/><path d="M14 9h4l3 3v4h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/>
+{%- elif name == 'chart' -%}<path d="M5 20V10M12 20V4M19 20v-7"/>
+{%- elif name == 'users' -%}<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>
+{%- elif name == 'gear' -%}<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+{%- elif name == 'search' -%}<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+{%- elif name == 'alert' -%}<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>
+{%- elif name == 'check' -%}<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 10"/>
+{%- elif name == 'info' -%}<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5h.01"/>
+{%- elif name == 'arrow' -%}<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- elif name == 'chevron' -%}<path d="M9 6l6 6-6 6"/>
+{%- elif name == 'plus' -%}<path d="M12 5v14M5 12h14"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}
+
+{# 다른 기능 화면으로 가는 링크. 그 기능 모듈이 없으면 '#' (기능을 하나씩 추가해도 화면이 깨지지 않게) #}
+{% macro href(endpoint) -%}
+  {{- url_for(endpoint, **kwargs) if endpoint in endpoints else '#' -}}
+{%- endmacro %}
+
+{% macro page_header(title, desc='') -%}
+<div class="page-head">
+  <div><h1>{{ title }}</h1>{% if desc %}<p class="sub">{{ desc }}</p>{% endif %}</div>
+  {% if caller %}<div class="actions">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{# 상태 태그: low(부족) / imminent(임박) / expired(경과) / ok(정상) / blue / gray #}
+{% macro tag(kind, text) -%}<span class="tag {{ kind }}">{{ text }}</span>{%- endmacro %}
+
+{% macro stock_tag(r) -%}
+  {%- if r.expired %}{{ tag('expired', '경과') }}
+  {%- elif r.low %}{{ tag('low', '부족') }}
+  {%- elif r.imminent %}{{ tag('imminent', '임박') }}
+  {%- else %}{{ tag('gray', '정상') }}{% endif -%}
+{%- endmacro %}
+
+{% macro status_tag(code) -%}
+  {%- set kind = {'DRAFT': 'gray', 'APPROVED': 'blue', 'PARTIAL': 'blue', 'DONE': 'ok', 'CANCELED': 'expired',
+                  'REQUESTED': 'imminent', 'REJECTED': 'expired', 'ACTIVE': 'ok', 'INACTIVE': 'gray',
+                  'ON_SALE': 'ok', 'STOPPED': 'gray'}.get(code, 'gray') -%}
+  {{ tag(kind, code|label) }}
+{%- endmacro %}
+
+{# 알림 박스: kind = error / warn / info / success #}
+{% macro alert(kind, title, desc='') -%}
+<div class="alert {{ kind }}" role="{{ 'alert' if kind == 'error' else 'status' }}">
+  {{ icon('check' if kind in ('info', 'success') else 'alert') }}
+  <div><strong>{{ title }}</strong>{% if desc %}<div class="desc">{{ desc }}</div>{% endif %}</div>
+</div>
+{%- endmacro %}
+
+{# 되돌리기 어려운 작업 확인 대화상자 (폐기·발주 취소·반품 승인 등, 5.4 제안)
+   사용: {% call confirm('id', '제목', '질문', action_url, '버튼문구', danger=True) %}요약·입력칸{% endcall %}
+   열기: <button type="button" data-open="id"> #}
+{% macro confirm(id, title, question, action, button, note='', danger=False) -%}
+<dialog id="{{ id }}" class="confirm">
+  <form method="post" action="{{ action }}">
+    <h3>{{ title }}</h3>
+    <p class="q">{{ question }}</p>
+    <div class="summary">{{ caller() }}</div>
+    {% if note %}{{ alert('error' if danger else 'info', note) }}{% endif %}
+    <div class="dialog-actions">
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" class="btn {{ 'danger' if danger else 'primary' }}">{{ button }}</button>
+    </div>
+  </form>
+</dialog>
+{%- endmacro %}

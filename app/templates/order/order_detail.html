@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, status_tag, confirm %}
+{% block title %}발주서 #{{ po.po_id }}{% endblock %}
+{% block content %}
+{% call page_header('발주서 #' ~ po.po_id, po.supplier_name ~ ' · 발주일 ' ~ (po.po_date|dt)) %}
+  {% if g.user.role == 'OWNER' %}
+    {% if po.status == 'DRAFT' %}
+    <form method="post" action="{{ url_for('order.order_approve', po_id=po.po_id) }}"><button class="btn primary">승인</button></form>
+    {% endif %}
+    {% if po.status in ('DRAFT', 'APPROVED', 'PARTIAL') %}
+    <button type="button" class="btn" data-open="cancel-po">발주 취소</button>
+    {% endif %}
+  {% endif %}
+  {% if po.status in ('APPROVED', 'PARTIAL') and 'receipt.receipts' in endpoints %}
+    <a class="btn primary" href="{{ url_for('receipt.receipts', type='PO', po=po.po_id) }}">입고 검수</a>
+  {% endif %}
+{% endcall %}
+
+<div class="grid c4" style="margin-bottom:20px">
+  <div class="card card-body"><div class="muted">상태</div><div style="margin-top:8px">{{ status_tag(po.status) }}</div></div>
+  <div class="card card-body"><div class="muted">총발주금액</div><div class="strong" style="font-size:20px;margin-top:6px">{{ po.total_amount|won }}원</div></div>
+  <div class="card card-body"><div class="muted">작성 / 승인</div><div style="margin-top:6px">{{ po.created_name }} / {{ po.approved_name or '-' }}<span class="code">{{ po.approved_at|dt if po.approved_at else '' }}</span></div></div>
+  <div class="card card-body"><div class="muted">취소</div><div style="margin-top:6px">{{ po.canceled_name or '-' }}<span class="code">{{ po.cancel_reason or '' }}</span></div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>발주 상품 · {{ details|length }}종</h2></div>
+  <table>
+    <tr><th>상품</th><th class="num">공급가격</th><th class="num">발주수량</th><th class="num">발주금액</th><th class="num">누적입고</th></tr>
+    {% for d in details %}
+    <tr><td class="strong">{{ d.product_name }}</td><td class="num">{{ d.supply_price|won }}원</td><td class="num">{{ d.order_qty }}개</td>
+        <td class="num">{{ d.amount|won }}원</td><td class="num">{{ d.received_qty }} / {{ d.order_qty }}개</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if g.user.role == 'OWNER' and po.status in ('DRAFT', 'APPROVED', 'PARTIAL') %}
+{% call confirm('cancel-po', '발주 취소 확인', '진행 중인 발주를 취소할까요?', url_for('order.order_cancel', po_id=po.po_id), '발주 취소',
+                ('이미 입고된 수량은 유지되고 미입고분만 취소됩니다.' if po.status == 'PARTIAL' else '발주 취소 후에는 입고할 수 없습니다.')) %}
+  발주번호 #{{ po.po_id }}<br>공급업체 {{ po.supplier_name }} · {{ po.status|label }}
+  <div style="margin-top:10px;line-height:normal"><label class="req">취소사유</label><input name="reason" maxlength="255" required></div>
+{% endcall %}
+{% endif %}
+{% endblock %}

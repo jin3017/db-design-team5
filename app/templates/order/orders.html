@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, status_tag %}
+{% block title %}발주{% endblock %}
+{% block content %}
+{% call page_header('발주', '발주서를 작성·승인하고 진행 상태를 관리하세요.') %}
+  <a class="btn" href="{{ url_for('order.needed') }}">발주 필요 상품</a>
+  <a class="btn primary" href="{{ url_for('order.order_new') }}">{{ icon('plus', 18) }} 발주서 작성</a>
+{% endcall %}
+
+<div class="seg" style="margin-bottom:16px">
+  {% for v, t in [('', '전체'), ('DRAFT', '작성'), ('APPROVED', '승인'), ('PARTIAL', '부분입고'), ('DONE', '입고완료'), ('CANCELED', '취소')] %}
+  <a class="{{ 'on' if status == v }}" href="{{ url_for('order.orders', status=v) if v else url_for('order.orders') }}">{{ t }}</a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <table>
+    <tr><th>발주번호</th><th>발주일</th><th>공급업체</th><th class="num">총발주금액</th><th>상태</th><th>작성</th><th></th></tr>
+    {% for r in rows %}
+    <tr><td>#{{ r.po_id }}</td><td>{{ r.po_date|dt }}</td><td>{{ r.supplier_name }}</td>
+        <td class="num">{{ r.total_amount|won }}원</td><td>{{ status_tag(r.status) }}</td><td>{{ r.created_name }}</td>
+        <td><a class="btn sm" href="{{ url_for('order.order_detail', po_id=r.po_id) }}">상세</a></td></tr>
+    {% else %}
+    <tr><td colspan="7"><div class="empty">발주서가 없습니다.</div></td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

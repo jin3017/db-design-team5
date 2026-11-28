@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header %}
+{% block title %}설정{% endblock %}
+{% block content %}
+{{ page_header('설정', '변경한 값은 이후 조회·알림에 바로 반영됩니다.') }}
+<form class="card card-body" method="post" style="max-width:640px">
+  {% for s in rows if s.setting_key in meta %}
+  {% set name, lo, hi = meta[s.setting_key] %}
+  <div style="margin-bottom:18px"><label class="req">{{ name }}</label>
+    <input type="number" name="{{ s.setting_key }}" value="{{ s.setting_value }}" min="{{ lo }}" max="{{ hi }}" required style="max-width:200px">
+    <div class="muted" style="margin-top:4px">{{ lo }}~{{ hi }} · 최근 수정 {{ s.emp_name or '-' }} {{ s.updated_at|dt }}</div></div>
+  {% endfor %}
+  <button class="btn primary" type="submit">저장</button>
+</form>
+{% endblock %}

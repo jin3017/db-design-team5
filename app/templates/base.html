@@ -1,0 +1,47 @@
+{% from "_ui.html" import icon %}
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}매장 관리{% endblock %} · {{ store_name }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('home.index') }}">{{ icon('store', 26) }}<b>{{ store_name }}</b><span>매장 관리 시스템</span></a>
+  {% if g.user %}
+  <div class="user">
+    <span>{{ g.user.emp_name }}</span><span class="tag blue">{{ g.user.role|label }}</span>
+    <a class="btn" href="{{ url_for('auth.logout') }}">로그아웃</a>
+  </div>
+  {% endif %}
+</header>
+
+{% if g.user %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-label">매장 업무</div>
+    <nav>
+      {# 메뉴는 각 기능 모듈의 MENU 에서 자동 수집. 점주 전용 메뉴는 직원에게 숨김 (FR-016) #}
+      {% for _, name, endpoint, owner_only, ic, prefixes in menus if not owner_only or g.user.role == 'OWNER' %}
+        <a href="{{ url_for(endpoint) }}" class="{{ 'active' if is_active(prefixes) }}">{{ icon(ic) }}{{ name }}</a>
+      {% endfor %}
+    </nav>
+    <div class="side-foot">{{ '점주 · 전체 메뉴 이용' if g.user.role == 'OWNER' else '직원 · 판매·입고·재고' }}</div>
+  </aside>
+  <main class="content">
+    {% include "_flash.html" %}
+    {% block content %}{% endblock %}
+    <footer class="foot"><span>기준일 {{ today|dt }}</span><span>{{ store_name }} · 내부 업무용</span></footer>
+  </main>
+</div>
+{% else %}
+<main class="center">
+  {% block public %}{% endblock %}
+</main>
+{% endif %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

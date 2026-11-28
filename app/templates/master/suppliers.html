@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag %}
+{% block title %}공급업체관리{% endblock %}
+{% block content %}
+{% call page_header('공급업체관리', '발주·반품 상대 업체와 담당 상품을 관리하세요. 발주 이력이 있는 업체는 거래중지로만 변경합니다.') %}
+  <a class="btn primary" href="{{ url_for('master.supplier_form') }}">{{ icon('plus', 18) }} 공급업체 등록</a>
+{% endcall %}
+<div class="card">
+  <table>
+    <tr><th>공급업체명</th><th>연락처</th><th>담당자</th><th class="num">담당 상품</th><th>거래상태</th><th></th></tr>
+    {% for s in rows %}
+    <tr class="{{ 'dim' if s.trade_status != 'ACTIVE' }}"><td class="strong">{{ s.supplier_name }}</td><td>{{ s.phone or '-' }}</td>
+      <td>{{ s.contact_name or '-' }}</td><td class="num">{{ s.product_count }}종</td>
+      <td>{{ tag('ok', '거래중') if s.trade_status == 'ACTIVE' else tag('gray', '거래중지') }}</td>
+      <td style="white-space:nowrap"><a class="btn sm" href="{{ url_for('master.supplier_form', sid=s.supplier_id) }}">상세·담당상품</a>
+        <form class="inline" method="post" action="{{ url_for('master.supplier_toggle', sid=s.supplier_id) }}"
+              onsubmit="return confirm('{{ s.supplier_name }} 거래 상태를 변경할까요?')">
+          <button class="btn sm">{{ '거래중지' if s.trade_status == 'ACTIVE' else '거래재개' }}</button></form></td></tr>
+    {% else %}<tr><td colspan="6"><div class="empty">공급업체가 없습니다.</div></td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

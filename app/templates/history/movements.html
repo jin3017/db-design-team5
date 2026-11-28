@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, tag %}
+{% block title %}재고 변동 이력{% endblock %}
+{% block content %}
+{{ page_header('재고 변동 이력', '판매·입고·폐기·반품·조정으로 재고가 바뀔 때마다 남는 기록입니다. 조회만 가능하며 수정·삭제할 수 없습니다.') }}
+{% include "stock/_tabs.html" %}
+
+<form class="card card-body form-row" method="get">
+  <div style="max-width:170px"><label>시작일</label><input type="date" name="from" value="{{ a.get('from', '') }}"></div>
+  <div style="max-width:170px"><label>종료일</label><input type="date" name="to" value="{{ a.get('to', '') }}"></div>
+  <div><label>상품명 또는 바코드</label><input name="q" value="{{ a.get('q', '') }}"></div>
+  <div style="max-width:140px"><label>변동 유형</label><select name="type"><option value="">전체</option>
+    {% for t in types %}<option value="{{ t }}" {{ 'selected' if a.get('type') == t }}>{{ t|label }}</option>{% endfor %}</select></div>
+  <div style="max-width:150px"><label>처리 직원</label><select name="emp"><option value="">전체</option>
+    {% for e in emps %}<option value="{{ e.emp_id }}" {{ 'selected' if a.get('emp') == e.emp_id|string }}>{{ e.emp_name }}</option>{% endfor %}</select></div>
+  <button class="btn primary" style="flex:none">조회</button>
+</form>
+
+<div class="card">
+  <div class="card-head"><h2>이력 · 전체 {{ total }}건</h2></div>
+  <table>
+    <tr><th>일시</th><th>상품</th><th>LOT</th><th>유형</th><th class="num">변동</th><th class="num">변동 후 잔여</th><th>처리자</th><th>원천 업무</th></tr>
+    {% for r in rows %}
+    {% set kind = {'IN': 'ok', 'SALE': 'blue', 'DISPOSE': 'expired', 'RETURN': 'low', 'ADJUST': 'gray'}[r.movement_type] %}
+    <tr><td>{{ r.moved_at|dt }}</td><td class="strong">{{ r.product_name }}</td><td>{{ r.lot_id }}</td>
+      <td>{{ tag(kind, r.movement_type|label) }}</td>
+      <td class="num strong" style="color:{{ 'var(--green)' if r.qty_change > 0 else 'var(--red)' }}">{{ '%+d'|format(r.qty_change) }}</td>
+      <td class="num">{{ r.remain_after }}</td><td>{{ r.emp_name }}</td><td>{{ r.source }}{% if r.reason %}<span class="code">{{ r.reason }}</span>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">조회된 이력이 없습니다.</div></td></tr>{% endfor %}
+  </table>
+  <div class="card-foot"><span class="muted">{{ page }} / {{ pages }} 페이지 · 50건씩</span>
+    <div class="pager">
+      {% if page > 1 %}<a class="btn sm" href="{{ url_for('history.movements', page=page - 1, **params) }}">이전</a>{% endif %}
+      <span class="btn sm on">{{ page }}</span>
+      {% if page < pages %}<a class="btn sm" href="{{ url_for('history.movements', page=page + 1, **params) }}">다음</a>{% endif %}
+    </div></div>
+</div>
+{% endblock %}

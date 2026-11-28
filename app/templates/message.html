@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from "_ui.html" import alert %}
+{% block content %}
+{{ alert('error', message) }}
+<a class="btn" href="{{ url_for('home.index') }}">메인으로</a>
+{% endblock %}
+{% block public %}
+<div class="card login">{{ alert('error', message) }}<a class="btn" href="{{ url_for('auth.login') }}">로그인</a></div>
+{% endblock %}
