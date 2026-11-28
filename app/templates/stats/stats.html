@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, stock_tag %}
+{% block title %}통계{% endblock %}
+{% block content %}
+{{ page_header('매출 통계', '기간별 매출·판매량·인기상품과 현재 재고 현황입니다.') }}
+
+<form class="card card-body form-row" method="get">
+  <div style="max-width:160px"><label>조회 단위</label><select name="unit">
+    <option value="day" {{ 'selected' if unit == 'day' }}>일별</option><option value="month" {{ 'selected' if unit == 'month' }}>월별</option></select></div>
+  <div style="max-width:200px"><label>시작일</label><input type="date" name="from" value="{{ d_from.isoformat() }}"></div>
+  <div style="max-width:200px"><label>종료일</label><input type="date" name="to" value="{{ d_to.isoformat() }}"></div>
+  <button class="btn primary" style="flex:none">조회</button>
+</form>
+
+<div class="grid c3" style="margin-bottom:20px">
+  <div class="card stat"><div class="muted">기간 매출</div><div class="big">{{ total|won }}원</div></div>
+  <div class="card stat"><div class="muted">판매 수량</div><div class="big">{{ total_qty|won }}개</div></div>
+  <div class="card stat"><div class="muted">판매 건수</div><div class="big">{{ periods|sum(attribute='sale_count') }}건</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>{{ '일별' if unit == 'day' else '월별' }} 매출</h2></div>
+  <div class="card-body">
+    {% for p in periods %}
+    <div class="bar-row"><span>{{ p.period }}</span>
+      <div><div class="bar" style="width:{{ (p.revenue / max_rev * 100)|round(1) }}%"></div></div>
+      <span class="num">{{ p.revenue|won }}원 · {{ p.qty }}개</span></div>
+    {% else %}<div class="empty">조회된 데이터가 없습니다.</div>{% endfor %}
+  </div>
+</div>
+
+<div class="split" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-head"><h2>인기상품 (판매량 상위 10)</h2></div>
+    <table>
+      <tr><th>순위</th><th>상품</th><th class="num">수량</th><th class="num">매출</th></tr>
+      {% for t in top %}<tr><td>{{ loop.index }}</td><td>{{ t.product_name }}</td><td class="num">{{ t.qty }}개</td><td class="num">{{ t.revenue|won }}원</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">조회된 데이터가 없습니다.</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>재고 현황</h2></div>
+    <table>
+      <tr><th>상품</th><th class="num">현재고</th><th class="num">안전재고</th><th>상태</th></tr>
+      {% for s in stock %}<tr><td>{{ s.product_name }}</td><td class="num">{{ s.current_qty }}개</td><td class="num">{{ s.safety_stock }}개</td><td>{{ stock_tag(s) }}</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
