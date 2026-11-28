@@ -1,23 +1,44 @@
 # db-design-team5
 2026-2 데이터베이스설계 5조
 
-- DBMS: MySQL 8
-- 언어: Python 3.10+
+편의점 발주·재고·판매 관리 시스템 (매장 1곳 내부용 웹 앱)
+
+- DBMS: MySQL 8 / 언어: Python 3.10+ / 웹: Flask
 
 ## 폴더 구조
 ```
-├─ docs/            설계서, ERD, 테이블 정의서
+├─ run.py              앱 실행 (python run.py)
+├─ app/
+│  ├─ __init__.py        앱 생성, features/ 자동 등록
+│  ├─ core/              공통
+│  │  ├─ db.py             DB 연결·트랜잭션
+│  │  ├─ auth.py           로그인·권한 (점주/직원)
+│  │  ├─ inventory.py      LOT 잠금·재고변동이력 저장
+│  │  ├─ web.py            화면 공용 도우미, 재고 집계 쿼리
+│  │  └─ labels.py         코드값 → 한글 표시명
+│  ├─ features/          기능 1개 = 파일 1개 (업무 처리 + 화면)
+│  │  ├─ home.py           메인 (재고 부족·소비기한 알림)
+│  │  ├─ master.py         상품·카테고리·공급업체   UC-03, 04
+│  │  ├─ order.py          발주                    UC-05, 06
+│  │  ├─ receipt.py        입고·검수                UC-07
+│  │  ├─ sale.py           판매 (FEFO 차감)         UC-08
+│  │  ├─ stock.py          재고 조회·조정·소비기한·폐기 UC-09~11
+│  │  ├─ returns.py        반품                    UC-12
+│  │  ├─ stats.py          매출 통계                UC-13
+│  │  ├─ history.py        재고 변동 이력           UC-14
+│  │  └─ admin.py          직원·설정                UC-02, FR-019
+│  ├─ templates/         화면 (HTML)
+│  └─ static/            CSS·아이콘
 ├─ sql/
-│  ├─ 01_schema.sql   DB/테이블 생성 (DROP 후 재생성)
-│  ├─ 02_seed.sql     테스트 데이터
-│  ├─ 03_views.sql    뷰, 트리거, 프로시저
-│  └─ queries/        기능별 쿼리
-├─ app/             Python 코드
-│  ├─ db.py           DB 연결 (get_connection)
-│  └─ main.py         연결 확인용
-├─ .env.example     접속 정보 템플릿
+│  ├─ 01_schema.sql      DB·테이블 생성 (DROP 후 재생성)
+│  ├─ 02_seed.sql        테스트 데이터 + 테스트 계정
+│  └─ 03_views.sql       뷰·트리거·프로시저
+├─ scripts/check_db.py  DB 연결 확인
+├─ docs/                설계 문서 (01 요구사항 → 02 개념 → 03 스키마)
+├─ .env.example         DB 접속 정보 템플릿
 └─ requirements.txt
 ```
+**새 기능 추가:** `app/features/새기능.py`에 `bp`와 `MENU`만 두면 자동으로 등록·메뉴에 표시됨.
 
 ## 처음 세팅 (한 번만)
 1. MySQL 8 설치 후 실행
@@ -43,8 +64,14 @@
    (MySQL Workbench나 VSCode 확장에서 파일 열고 실행해도 됨)
 6. 연결 확인
    ```
-   python app/main.py
+   python scripts/check_db.py
    ```
+7. 앱 실행 → 브라우저에서 http://127.0.0.1:5000
+   ```
+   python run.py            # 이 PC에서만
+   python run.py --lan      # 매장 네트워크의 다른 PC·태블릿에서도 접속
+   ```
+   테스트 계정은 `sql/02_seed.sql` 맨 위 주석 참고
 
 ## 협업 규칙
 - `main` 에 직접 push 금지 → `feature/이름-작업내용` 브랜치에서 작업 후 PR
