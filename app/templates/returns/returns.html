@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, status_tag, confirm %}
+{% block title %}반품{% endblock %}
+{% block content %}
+{{ page_header('반품', '불량·오배송 상품을 공급업체에 돌려보냅니다. 요청 → 승인(재고 차감) → 완료 순으로 처리하세요.') }}
+
+<form class="card card-body" method="post">
+  <h2 style="margin-bottom:14px">반품 요청</h2>
+  <div class="form-grid">
+    <div><label class="req">공급업체</label><select name="supplier_id" required><option value="">선택</option>
+      {% for s in sups %}<option value="{{ s.supplier_id }}">{{ s.supplier_name }}</option>{% endfor %}</select></div>
+    <div style="grid-column:span 2"><label>입고 묶음(LOT) · 재고에 있는 상품이면 선택</label><select name="lot_id"><option value="">선택 안 함 (검수 파손분 등 재고에 없는 수량)</option>
+      {% for l in lots %}<option value="{{ l.lot_id }}" {{ 'selected' if pre_lot == l.lot_id }}>{{ l.product_name }} · LOT {{ l.lot_id }} · 잔여 {{ l.remain_qty }}개{{ ' · ~' ~ (l.expiry_date|dt) if l.expiry_date }}</option>{% endfor %}</select></div>
+    <div><label>상품 · LOT 미선택 시</label><select name="product_id"><option value="">선택</option>
+      {% for p in products %}<option value="{{ p.product_id }}">{{ p.product_name }}</option>{% endfor %}</select></div>
+    <div><label class="req">반품수량</label><input type="number" name="return_qty" min="1" required></div>
+    <div><label class="req">반품사유</label><select name="reason_type">{% for r in reasons %}<option value="{{ r }}">{{ r|label }}</option>{% endfor %}</select></div>
+    <div><label>연결 발주번호 (선택)</label><input type="number" name="po_id" min="1"></div>
+    <div><button class="btn primary" type="submit" style="width:100%">반품 요청</button></div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-head"><h2>반품 내역</h2></div>
+  <table>
+    <tr><th>반품번호</th><th>공급업체</th><th>상품</th><th class="num">수량</th><th>사유</th><th>상태</th><th>요청 / 결정</th><th style="width:220px">처리</th></tr>
+    {% for r in rows %}
+    <tr><td>#{{ r.return_id }}</td><td>{{ r.supplier_name }}</td>
+      <td class="strong">{{ r.product_name }}<span class="code">{{ ('LOT ' ~ r.lot_id) if r.lot_id else '재고 외 수량' }}</span></td>
+      <td class="num">{{ r.return_qty }}개</td><td>{{ r.reason_type|label }}</td>
+      <td>{{ status_tag(r.status) }}{% if r.reject_reason %}<span class="code">{{ r.reject_reason }}</span>{% endif %}</td>
+      <td>{{ r.requested_name }}<span class="code">{{ r.requested_at|dt }}{{ (' / ' ~ r.decided_name) if r.decided_name }}</span></td>
+      <td style="white-space:nowrap">
+        {% if r.status == 'REQUESTED' %}
+          <button type="button" class="btn sm primary" data-open="ap-{{ r.return_id }}">승인</button>
+          <button type="button" class="btn sm" data-open="rj-{{ r.return_id }}">반려</button>
+          <form class="inline" method="post" action="{{ url_for('returns.return_action', rid=r.return_id, action='cancel') }}"
+                onsubmit="return confirm('반품 요청 #{{ r.return_id }}를 취소할까요?')"><button class="btn sm">취소</button></form>
+        {% elif r.status == 'APPROVED' %}
+          <form class="inline" method="post" action="{{ url_for('returns.return_action', rid=r.return_id, action='complete') }}">
+            <button class="btn sm">완료 처리</button></form>
+        {% else %}<span class="muted">-</span>{% endif %}
+      </td></tr>
+    {% else %}<tr><td colspan="8"><div class="empty">반품 내역이 없습니다.</div></td></tr>{% endfor %}
+  </table>
+</div>
+
+{% for r in rows if r.status == 'REQUESTED' %}
+{% call confirm('ap-' ~ r.return_id, '반품 승인 확인', '검토한 반품 요청을 승인할까요?',
+                url_for('returns.return_action', rid=r.return_id, action='approve'), '반품 승인',
+                ('승인 후 반품 재고 ' ~ r.return_qty ~ '개가 차감됩니다.') if r.lot_id else '재고에 없던 수량이라 재고는 차감되지 않습니다.') %}
+  반품번호 #{{ r.return_id }}<br>공급업체 {{ r.supplier_name }}<br>{{ r.product_name }} · {{ r.reason_type|label }} {{ r.return_qty }}개
+{% endcall %}
+{% call confirm('rj-' ~ r.return_id, '반품 반려', '이 반품 요청을 반려할까요?',
+                url_for('returns.return_action', rid=r.return_id, action='reject'), '반려') %}
+  반품번호 #{{ r.return_id }} · {{ r.product_name }} {{ r.return_qty }}개
+  <div style="margin-top:10px;line-height:normal"><label class="req">반려사유</label><input name="reason" maxlength="255" required></div>
+{% endcall %}
+{% endfor %}
+{% endblock %}
