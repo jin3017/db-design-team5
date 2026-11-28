@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header %}
+{% block title %}{{ s.supplier_name if s else '공급업체 등록' }}{% endblock %}
+{% block content %}
+{% call page_header(s.supplier_name if s else '공급업체 등록', '업체명만 필수입니다. 담당 상품과 공급가격은 저장 후 추가할 수 있습니다.') %}
+  <a class="btn" href="{{ url_for('master.suppliers') }}">목록</a>
+{% endcall %}
+<form class="card card-body" method="post" style="max-width:760px">
+  <div class="form-grid">
+    <div><label class="req">공급업체명</label><input name="supplier_name" value="{{ s.supplier_name if s else '' }}" maxlength="100" required></div>
+    <div><label>연락처</label><input name="phone" value="{{ s.phone or '' if s else '' }}" maxlength="20"></div>
+    <div><label>담당자명</label><input name="contact_name" value="{{ s.contact_name or '' if s else '' }}" maxlength="50"></div>
+  </div>
+  <button class="btn primary" type="submit" style="margin-top:20px">저장</button>
+</form>
+
+{% if s %}
+<div class="card">
+  <div class="card-head"><h2>담당 상품 · {{ items|length }}종</h2><span class="muted">발주서에는 담당 상품만 추가할 수 있습니다.</span></div>
+  <table>
+    <tr><th>상품</th><th class="num">상품 매입가</th><th style="width:280px">공급가격</th><th style="width:90px"></th></tr>
+    {% for i in items %}
+    <tr><td class="strong">{{ i.product_name }}<span class="code">{{ i.barcode }}</span></td><td class="num">{{ i.purchase_price|won }}원</td>
+      <td><form class="form-row" method="post" action="{{ url_for('master.supplier_products', sid=s.supplier_id) }}" style="margin:0">
+        <input type="hidden" name="product_id" value="{{ i.product_id }}">
+        <div><input type="number" min="0" name="supply_price" value="{{ i.supply_price }}"></div><button class="btn sm" style="flex:none">변경</button></form></td>
+      <td><form method="post" action="{{ url_for('master.supplier_products', sid=s.supplier_id) }}">
+        <input type="hidden" name="product_id" value="{{ i.product_id }}"><input type="hidden" name="remove" value="1">
+        <button class="btn sm">제외</button></form></td></tr>
+    {% endfor %}
+  </table>
+  {% if others %}
+  <form class="card-foot form-row" method="post" action="{{ url_for('master.supplier_products', sid=s.supplier_id) }}" style="justify-content:flex-start">
+    <div style="max-width:320px"><label>상품 추가</label><select name="product_id">{% for p in others %}<option value="{{ p.product_id }}">{{ p.product_name }}</option>{% endfor %}</select></div>
+    <div style="max-width:180px"><label>공급가격 (원)</label><input type="number" min="0" name="supply_price" required></div>
+    <button class="btn primary" style="flex:none">추가</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

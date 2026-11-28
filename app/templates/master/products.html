@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag %}
+{% block title %}상품관리{% endblock %}
+{% block content %}
+{% call page_header('상품관리', '상품을 등록·수정하고 판매중지/판매재개를 처리하세요. 이력이 있는 상품은 삭제하지 않습니다.') %}
+  {% if g.user.role == 'OWNER' %}
+  <a class="btn" href="{{ url_for('master.categories') }}">카테고리</a>
+  <a class="btn primary" href="{{ url_for('master.product_form') }}">{{ icon('plus', 18) }} 상품 등록</a>
+  {% endif %}
+{% endcall %}
+
+<form class="card card-body form-row" method="get">
+  <div><label>상품명 또는 바코드</label><input name="q" value="{{ q }}"></div>
+  <div style="max-width:200px"><label>카테고리</label><select name="category"><option value="">전체</option>
+    {% for c in cats %}<option value="{{ c.category_id }}" {{ 'selected' if cat == c.category_id }}>{{ c.category_name }}</option>{% endfor %}</select></div>
+  <button class="btn primary" style="flex:none">검색</button>
+</form>
+
+<div class="card">
+  <table>
+    <tr><th>상품명 / 바코드</th><th>카테고리</th><th class="num">매입가</th><th class="num">판매가</th><th class="num">안전재고</th><th>소비기한</th><th>상태</th>{% if g.user.role == 'OWNER' %}<th></th>{% endif %}</tr>
+    {% for p in rows %}
+    <tr class="{{ 'dim' if p.sale_status != 'ON_SALE' }}">
+      <td class="strong">{{ p.product_name }}<span class="code">{{ p.barcode }}</span></td><td>{{ p.category_name }}</td>
+      <td class="num">{{ p.purchase_price|won }}원</td><td class="num">{{ p.sale_price|won }}원</td><td class="num">{{ p.safety_stock }}개</td>
+      <td>{{ '관리' if p.expiry_managed else '관리 안 함' }}</td>
+      <td>{{ tag('ok', '판매중') if p.sale_status == 'ON_SALE' else tag('gray', '판매중지') }}</td>
+      {% if g.user.role == 'OWNER' %}
+      <td style="white-space:nowrap"><a class="btn sm" href="{{ url_for('master.product_form', pid=p.product_id) }}">수정</a>
+        <form class="inline" method="post" action="{{ url_for('master.product_toggle', pid=p.product_id) }}"
+              onsubmit="return confirm('{{ p.product_name }} 상품을 {{ '판매중지' if p.sale_status == 'ON_SALE' else '판매재개' }}할까요?{{ ' 남은 재고는 판매할 수 없게 됩니다.' if p.sale_status == 'ON_SALE' }}')">
+          <button class="btn sm">{{ '판매중지' if p.sale_status == 'ON_SALE' else '판매재개' }}</button></form></td>
+      {% endif %}
+    </tr>
+    {% else %}<tr><td colspan="8"><div class="empty">상품이 없습니다.</div></td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}
