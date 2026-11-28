@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header, tag %}
+{% block title %}발주 필요 상품{% endblock %}
+{% block content %}
+{% call page_header('발주 필요 상품', '판매중 상품 중 판매 가능 재고가 안전재고 이하인 상품입니다.') %}
+  <a class="btn" href="{{ url_for('order.orders') }}">발주서 목록</a>
+{% endcall %}
+
+<div class="card">
+  <table>
+    <tr><th>상품 / 바코드</th><th class="num">판매 가능</th><th class="num">안전재고</th><th class="num">부족</th><th>공급업체</th><th>진행 상태</th><th></th></tr>
+    {% for r in rows %}
+    <tr><td class="strong">{{ r.product_name }}<span class="code">{{ r.barcode }}</span></td>
+      <td class="num strong">{{ r.sellable_qty }}개</td><td class="num">{{ r.safety_stock }}개</td>
+      <td class="num" style="color:var(--orange);font-weight:700">{{ r.shortage }}개</td>
+      <td>{{ r.suppliers|map(attribute='supplier_name')|join(', ') or '-' }}</td>
+      <td>{{ tag('blue', '발주 진행중') if r.in_progress else '<span class="muted">미발주</span>'|safe }}</td>
+      <td>{% if r.suppliers %}<a class="btn sm" href="{{ url_for('order.order_new', supplier_id=r.suppliers[0].supplier_id) }}">발주</a>{% endif %}</td></tr>
+    {% else %}
+    <tr><td colspan="7"><div class="empty">발주가 필요한 상품이 없습니다.</div></td></tr>
+    {% endfor %}
+  </table>
+  <div class="card-foot"><span class="muted">경과 LOT 제외 · 부족 수량은 안전재고 기준</span></div>
+</div>
+{% endblock %}
