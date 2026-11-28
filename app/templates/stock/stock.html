@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag, stock_tag, alert %}
+{% block title %}재고 조회·조정{% endblock %}
+{% block content %}
+{{ page_header('재고 조회·조정', '상품별 재고와 소비기한을 확인하고 입고 묶음별 수량을 조정하세요.') }}
+{% include "stock/_tabs.html" %}
+
+<form class="card card-body form-row" method="get">
+  <div><label>상품명</label><input name="name" value="{{ a.name or '' }}" placeholder="상품명 입력"></div>
+  <div><label>바코드</label><input name="barcode" value="{{ a.barcode or '' }}" placeholder="바코드 입력"></div>
+  <div style="max-width:170px"><label>카테고리</label><select name="category"><option value="">전체</option>
+    {% for c in cats %}<option value="{{ c.category_id }}" {{ 'selected' if a.category == c.category_id|string }}>{{ c.category_name }}</option>{% endfor %}</select></div>
+  <div style="max-width:170px"><label>재고 상태</label><select name="state">
+    {% for v, t in [('', '전체'), ('low', '부족'), ('imminent', '임박'), ('expired', '경과')] %}
+    <option value="{{ v }}" {{ 'selected' if a.state == v }}>{{ t }}</option>{% endfor %}</select></div>
+  <button class="btn primary" type="submit" style="flex:none">검색</button>
+  <a class="btn" href="{{ url_for('stock.stock') }}" style="flex:none">초기화</a>
+</form>
+
+{{ alert('info', '현재고는 경과 재고를 포함합니다. 부족은 판매 가능 수량 ≤ 안전재고 기준입니다.',
+         '임박: 오늘부터 ' ~ days ~ '일 이내 · 경과: 오늘 이전 · 경과된 입고 묶음은 판매에서 제외됩니다.') }}
+
+<div class="card">
+  <div class="card-head"><h2>상품 재고 · 전체 {{ rows|length }}건</h2></div>
+  <table>
+    <tr><th>상품명</th><th>카테고리</th><th class="num">현재고</th><th class="num">판매 가능</th><th class="num">안전재고</th><th>가장 빠른 소비기한</th><th>상태</th></tr>
+    {% for r in rows %}
+    {% set opened = open_pid == r.product_id %}
+    <tr class="{{ 'dim' if r.sale_status != 'ON_SALE' }}">
+      <td><button type="button" class="toggle" data-target="lots-{{ r.product_id }}" aria-expanded="{{ 'true' if opened else 'false' }}">{{ icon('chevron', 16) }}{{ r.product_name }}</button>
+        {% if r.sale_status != 'ON_SALE' %} {{ tag('gray', '판매중지') }}{% endif %}</td>
+      <td>{{ r.category_name }}</td>
+      <td class="num strong">{{ r.current_qty }}개</td><td class="num">{{ r.sellable_qty }}개</td><td class="num">{{ r.safety_stock }}개</td>
+      <td>{{ r.earliest_expiry|dt if r.earliest_expiry else ('관리 안 함' if r.lots else '-') }}</td>
+      <td>{{ stock_tag(r) }}</td>
+    </tr>
+    <tr class="lots" id="lots-{{ r.product_id }}" {{ '' if opened else 'hidden' }}>
+      <td colspan="7">
+        <div style="display:flex;justify-content:space-between"><b>입고 묶음 상세 · {{ r.product_name }}</b>
+          <span style="color:var(--blue);font-size:13px">총 {{ r.lots|length }}건 · 합계 {{ r.current_qty }}개</span></div>
+        {% if r.lots %}
+        <table class="lot-table">
+          <tr><th>LOT번호</th><th>입고일자</th><th>소비기한</th><th class="num">잔여수량</th><th style="width:150px">처리</th></tr>
+          {% for l in r.lots %}
+          <tr><td>{{ l|lot_no }}</td><td>{{ l.received_date|dt }}</td>
+            <td>{{ l.expiry_date|dt if l.expiry_date else '관리 안 함' }}
+              {% if l.expired %} {{ tag('expired', '경과') }}{% elif l.imminent %} {{ tag('imminent', '임박') }}{% endif %}</td>
+            <td class="num">{{ l.remain_qty }}개</td>
+            <td><button type="button" class="btn sm" data-open="adj-{{ l.lot_id }}">조정</button>
+              {% if l.expired %}<a class="btn sm" href="{{ url_for('stock.expiry') }}">폐기</a>{% endif %}</td></tr>
+          {% endfor %}
+        </table>
+        {% else %}<p class="muted">남아 있는 입고 묶음이 없습니다.</p>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7"><div class="empty">조회된 상품이 없습니다.</div></td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{# 재고 조정 팝업 (LOT별) — 시안: 현재 수량(장부) / 실제 수량 / 차이 자동 #}
+{% for r in rows %}{% for l in r.lots %}
+<dialog id="adj-{{ l.lot_id }}" class="confirm">
+  <form method="post" action="{{ url_for('stock.lot_adjust', lot_id=l.lot_id) }}" data-adjust data-before="{{ l.remain_qty }}">
+    <div style="display:flex;justify-content:space-between"><h3>재고 조정</h3><button type="button" class="btn sm" data-close>닫기</button></div>
+    <b>{{ r.product_name }}</b>
+    <p class="muted" style="margin:4px 0 16px">입고 묶음번호 {{ l|lot_no }} · 소비기한 {{ l.expiry_date|dt if l.expiry_date else '관리 안 함' }}</p>
+    <div class="grid c3" style="gap:10px">
+      <div><label>현재 수량(장부)</label><input value="{{ l.remain_qty }}개" readonly></div>
+      <div><label class="req">실제 수량</label><input type="number" name="after_qty" min="0" required></div>
+      <div><label>차이 · 자동</label><input class="diff" readonly></div>
+    </div>
+    <div style="margin-top:14px"><label class="req">조정사유</label><select name="reason_type" required>
+      {% for c in reasons %}<option value="{{ c }}">{{ c|label }}</option>{% endfor %}</select></div>
+    <div style="margin-top:14px"><label>상세사유 · 기타 선택 시 필수</label><input name="reason_detail" maxlength="255"></div>
+    {% if l.expired %}<p class="muted">소비기한이 지난 재고 정리는 조정 대신 폐기 처리를 사용하세요.</p>{% endif %}
+    <p class="after-note" style="color:var(--blue);font-size:13px;min-height:18px"></p>
+    <div class="dialog-actions"><button type="button" class="btn" data-close>취소</button>
+      <button class="btn primary" type="submit">재고 조정 저장</button></div>
+  </form>
+</dialog>
+{% endfor %}{% endfor %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{# 재고 화면 탭. 변동 이력은 점주 전용이며 history 기능이 있을 때만 표시 #}
+<nav class="tabs">
+  <a class="{{ 'active' if request.endpoint == 'stock.stock' }}" href="{{ url_for('stock.stock') }}">재고 조회·조정</a>
+  <a class="{{ 'active' if request.endpoint == 'stock.expiry' }}" href="{{ url_for('stock.expiry') }}">소비기한·폐기</a>
+  {% if g.user.role == 'OWNER' and 'history.movements' in endpoints %}
+  <a class="{{ 'active' if request.endpoint == 'history.movements' }}" href="{{ url_for('history.movements') }}">재고 변동 이력</a>
+  {% endif %}
+</nav>
