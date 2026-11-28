@@ -18,6 +18,9 @@ env/
 Thumbs.db
 desktop.ini
 
+# Figma 화면 시안 (로컬 참고용, 공유 안 함)
+docs/ui/
+
 # DB 덤프, 로그
 *.log
 dump*.sql
