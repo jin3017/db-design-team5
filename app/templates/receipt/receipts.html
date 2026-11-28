@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag, status_tag, alert %}
+{% block title %}입고·검수{% endblock %}
+
+{# 입고 한 줄 = 입고상세 1줄 = LOT 1개. 모든 줄이 key/recv/dmg/exp/memo 를 같은 순서로 보내야 배열이 맞는다 #}
+{% macro line(key, recv='', expiry_managed=true, sub=false, title='') -%}
+<div class="rc-line{{ ' sub' if sub }}">
+  {% if sub %}<div class="sub-title">↳ {{ title }} · 추가 소비기한</div>{% endif %}
+  <input type="hidden" name="key[]" value="{{ key }}">
+  <div><label class="req">입고수량</label><input type="number" name="recv[]" min="0" value="{{ recv }}"></div>
+  <div><label>파손수량</label><input type="number" name="dmg[]" min="0" value="0"></div>
+  <div><label>정상수량 · 자동</label><input class="normal" readonly tabindex="-1"></div>
+  <div><label class="{{ 'req' if expiry_managed }}">소비기한</label>
+    {% if expiry_managed %}<input type="date" name="exp[]" min="{{ today.isoformat() }}">
+    {% else %}<input name="exp[]" value="" placeholder="관리 안 함" readonly tabindex="-1">{% endif %}</div>
+  <div><label>검수메모</label><input name="memo[]" maxlength="255"></div>
+  {% if sub %}<button type="button" class="btn sm" data-remove-line>삭제</button>{% else %}<span></span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% block content %}
+{{ page_header('입고·검수', '발주 수량과 실물을 확인하고 소비기한별로 나누어 입고하세요.') }}
+
+<div class="card card-body">
+  <span class="label req">입고유형</span>
+  <div class="seg">
+    <a class="{{ 'on' if rtype == 'PO' }}" href="{{ url_for('receipt.receipts', type='PO') }}">발주입고</a>
+    <a class="{{ 'on' if rtype == 'DIRECT' }}" href="{{ url_for('receipt.receipts', type='DIRECT') }}">직접입고</a>
+    {% if g.user.role == 'OWNER' %}<a class="{{ 'on' if rtype == 'INITIAL' }}" href="{{ url_for('receipt.receipts', type='INITIAL') }}">초기재고</a>{% endif %}
+  </div>
+  {% if rtype == 'PO' %}
+    {% if pos %}
+    <form class="form-row" method="get" style="margin-top:18px">
+      <input type="hidden" name="type" value="PO">
+      <div><label class="req">진행중 발주서 · 승인 또는 부분입고</label>
+        <select name="po" onchange="this.form.submit()">
+          {% for p in pos %}<option value="{{ p.po_id }}" {{ 'selected' if po and p.po_id == po.po_id }}>#{{ p.po_id }} · {{ p.supplier_name }} · {{ p.status|label }}</option>{% endfor %}
+        </select></div>
+      <a class="btn" href="{{ url_for('order.order_detail', po_id=po.po_id) }}">발주서 확인</a>
+    </form>
+    <p style="margin:14px 0 0" class="muted">공급업체 <b style="color:var(--ink)">{{ po.supplier_name }}</b> &nbsp; 발주일 {{ po.po_date|dt }} &nbsp; {{ status_tag(po.status) }}</p>
+    {% else %}
+    <p class="muted" style="margin:16px 0 0">입고할 발주서(승인·부분입고)가 없습니다.</p>
+    {% endif %}
+  {% endif %}
+</div>
+
+{% if rtype == 'PO' and po %}
+{{ alert('info', '소비기한이 다르면 하위 행을 추가해 입력하세요.', '상품별 누적 입고수량은 발주수량을 넘을 수 없습니다. 소비기한 비관리 상품은 ‘관리 안 함’으로 표시됩니다.') }}
+<form method="post">
+  <input type="hidden" name="type" value="PO"><input type="hidden" name="po_id" value="{{ po.po_id }}">
+  <div class="card">
+    <div class="card-head"><h2>입고 상품 · {{ details|length }}종</h2></div>
+    <div class="rc-head" style="background:var(--head);font-size:13px;color:var(--ink-2)"><span>상품명</span><span>발주수량</span><span>기입고수량</span><span>이번 입고</span></div>
+    {% for d in details %}
+    <div class="rc-item">
+      <div class="rc-head"><span>{{ d.product_name }}</span><span>{{ d.order_qty }}개</span><span>{{ d.received_qty }}개</span><span>{{ d.remaining }}개</span></div>
+      {% if d.remaining > 0 %}
+      <div class="rc-lines">
+        {{ line(d.po_detail_id, d.remaining, d.expiry_managed) }}
+        <div class="rc-subs"></div>
+        <div class="rc-tools">
+          {% if d.expiry_managed %}
+          <button type="button" class="btn sm" data-add-line="sub-{{ d.po_detail_id }}">{{ icon('plus', 16) }} 소비기한 추가</button>
+          <template id="sub-{{ d.po_detail_id }}">{{ line(d.po_detail_id, '', true, true, d.product_name) }}</template>
+          {% else %}<span class="muted">소비기한 비관리 상품</span>{% endif %}
+          <span class="muted">정상수량 = 입고수량 − 파손수량</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="rc-lines muted">입고 완료된 상품입니다.</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="card card-foot" style="border-top:1px solid var(--line)">
+    <b id="rc-sum">입고 0개 · 파손 0개 · 정상 0개</b>
+    <button class="btn primary" type="submit" style="width:160px">입고 확정</button>
+  </div>
+</form>
+
+{% elif rtype in ('DIRECT', 'INITIAL') %}
+{{ alert('info', ('발주 없이 들어온 상품을 입고합니다.' if rtype == 'DIRECT' else '시스템 도입 전부터 있던 재고를 등록합니다.'), '소비기한이 다른 묶음은 줄을 나눠 입력하세요. 입고수량이 0인 줄은 무시됩니다.') }}
+<form method="post">
+  <input type="hidden" name="type" value="{{ rtype }}">
+  {% if rtype == 'DIRECT' %}
+  <div class="card card-body"><label>공급업체 (선택)</label>
+    <select name="supplier_id" style="max-width:360px"><option value="">선택 안 함</option>
+      {% for s in sups %}<option value="{{ s.supplier_id }}">{{ s.supplier_name }}</option>{% endfor %}</select></div>
+  {% endif %}
+  <div class="card">
+    <div class="card-head"><h2>입고 상품</h2><span class="muted">소비기한 비관리 상품은 소비기한을 비워 두세요.</span></div>
+    {% for i in range(6) %}
+    <div class="rc-item"><div class="rc-lines">
+      <div class="rc-line" style="grid-template-columns:2fr 1fr 1fr 1fr 1.3fr 2fr">
+        <div><label>상품</label><select name="key[]"><option value="">선택</option>
+          {% for p in products %}<option value="{{ p.product_id }}">{{ p.product_name }}{{ '' if p.expiry_managed else ' (소비기한 관리 안 함)' }}</option>{% endfor %}</select></div>
+        <div><label>입고수량</label><input type="number" name="recv[]" min="0"></div>
+        <div><label>파손수량</label><input type="number" name="dmg[]" min="0" value="0"></div>
+        <div><label>정상수량 · 자동</label><input class="normal" readonly tabindex="-1"></div>
+        <div><label>소비기한</label><input type="date" name="exp[]" min="{{ today.isoformat() }}"></div>
+        <div><label>검수메모</label><input name="memo[]" maxlength="255"></div>
+      </div></div></div>
+    {% endfor %}
+  </div>
+  <div class="card card-foot" style="border-top:1px solid var(--line)">
+    <b id="rc-sum">입고 0개 · 파손 0개 · 정상 0개</b>
+    <button class="btn primary" type="submit" style="width:160px">입고 확정</button>
+  </div>
+</form>
+{% endif %}
+
+<div class="card">
+  <div class="card-head"><h2>최근 입고</h2></div>
+  <table>
+    <tr><th>입고번호</th><th>유형</th><th>공급업체</th><th class="num">입고</th><th class="num">파손</th><th>처리</th><th>일시</th></tr>
+    {% for r in recent %}
+    <tr><td>#{{ r.receipt_id }}</td><td>{{ r.receipt_type|label }}{% if r.po_id %} <span class="muted">(발주 #{{ r.po_id }})</span>{% endif %}</td>
+        <td>{{ r.supplier_name or '-' }}</td><td class="num">{{ r.qty or 0 }}개</td><td class="num">{{ r.damaged or 0 }}개</td>
+        <td>{{ r.emp_name }}</td><td>{{ r.received_at|dt }}</td></tr>
+    {% else %}<tr><td colspan="7" class="muted">입고 기록이 없습니다.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}
