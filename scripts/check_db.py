@@ -1,5 +1,10 @@
-"""DB 연결 확인용 진입점. 실행: python app/main.py"""
-from db import get_connection
+"""DB 연결 확인. 실행: python scripts/check_db.py"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 프로젝트 루트
+
+from app.core.db import get_connection  # noqa: E402
 
 
 def main() -> None:
