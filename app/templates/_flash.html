@@ -1,0 +1,6 @@
+{% from "_ui.html" import alert %}
+{# 처리 결과 메시지. "제목|설명" 형식이면 두 줄로 표시 #}
+{% for cat, m in get_flashed_messages(with_categories=true) %}
+  {% set title, _, desc = m.partition('|') %}
+  {{ alert(cat, title, desc) }}
+{% endfor %}

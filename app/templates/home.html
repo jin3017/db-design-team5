@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, page_header, tag, href %}
+{% block title %}매장 현황{% endblock %}
+{% block content %}
+{{ page_header('매장 현황', (today|dt) ~ ' 기준 · 오늘 확인할 재고와 소비기한을 한눈에 확인하세요.') }}
+
+<div class="grid c3">
+  <div class="card stat">
+    {{ tag('low', '재고 부족') }}
+    <div class="big">재고 부족 {{ low|length }}건</div>
+    <div class="muted">판매 가능 수량이 안전재고 이하</div>
+    <a class="go" href="{{ href('stock.stock', state='low') }}">상품 목록 보기 {{ icon('arrow') }}</a>
+  </div>
+  <div class="card stat">
+    {{ tag('imminent', '소비기한 임박') }}
+    <div class="big">소비기한 임박 {{ imminent|length }}건</div>
+    <div class="muted">{{ today|dt }} ~ {{ until|dt }}</div>
+    <a class="go" href="{{ href('stock.expiry') }}">입고 묶음 목록 보기 {{ icon('arrow') }}</a>
+  </div>
+  <div class="card stat">
+    {{ tag('expired', '소비기한 경과') }}
+    <div class="big">소비기한 경과 {{ expired|length }}건</div>
+    <div class="muted">{{ today|dt }} 이전 · 판매 불가</div>
+    <a class="go" href="{{ href('stock.expiry') }}">입고 묶음 목록 보기 {{ icon('arrow') }}</a>
+  </div>
+</div>
+<p class="muted" style="margin:-4px 0 24px">부족은 상품 수, 소비기한 알림은 입고 묶음 수입니다. 경과 재고를 제외한 판매 가능 수량으로 부족 여부를 판단합니다.</p>
+
+<div class="card">
+  <div class="card-head"><h2>자주 쓰는 업무</h2></div>
+  <div class="quick">
+    <a href="{{ href('sale.sale') }}">{{ icon('scan', 28) }}<div><b>판매</b><span class="muted">바코드 스캔으로 판매 등록</span></div><span class="chev">{{ icon('chevron') }}</span></a>
+    <a href="{{ href('receipt.receipts') }}">{{ icon('box-in', 28) }}<div><b>입고</b><span class="muted">수량과 소비기한 검수</span></div><span class="chev">{{ icon('chevron') }}</span></a>
+    <a href="{{ href('stock.stock') }}">{{ icon('boxes', 28) }}<div><b>재고 조회</b><span class="muted">상품별 재고와 입고 묶음 확인</span></div><span class="chev">{{ icon('chevron') }}</span></a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>확인할 상품</h2></div>
+  {% if checks %}
+  <table>
+    <tr><th>상품명</th><th style="width:16%">확인 항목</th><th style="width:30%">상세</th></tr>
+    {% for c in checks %}
+    <tr><td><a class="strong" style="color:inherit" href="{{ href('stock.stock_detail', pid=c.pid) }}">{{ c.name }}</a></td>
+        <td>{{ tag(c.kind, c.label) }}</td><td>{{ c.detail }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <div class="empty">{{ icon('check', 32) }}<b>확인할 상품이 없습니다.</b>재고 부족·소비기한 알림이 없어요.</div>
+  {% endif %}
+</div>
+{% endblock %}
