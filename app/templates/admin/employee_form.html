@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_header %}
+{% block title %}{{ e.emp_name if e else '직원 등록' }}{% endblock %}
+{% block content %}
+{{ page_header(e.emp_name ~ ' 정보 수정' if e else '직원 등록', '비밀번호는 암호화되어 저장됩니다. 본인 계정은 권한 변경·비활성화할 수 없습니다.') }}
+<form class="card card-body" method="post" style="max-width:760px">
+  <div class="form-grid">
+    <div><label class="req">아이디</label><input name="login_id" value="{{ e.login_id if e else '' }}" maxlength="50" {{ 'readonly' if e else 'required' }}></div>
+    <div><label class="{{ '' if e else 'req' }}">{{ '새 비밀번호 (변경 시에만)' if e else '초기 비밀번호' }}</label>
+      <input type="password" name="password" minlength="4" autocomplete="new-password" {{ '' if e else 'required' }}></div>
+    <div><label class="req">이름</label><input name="emp_name" value="{{ e.emp_name if e else '' }}" maxlength="50" required></div>
+    <div><label>연락처</label><input name="phone" value="{{ e.phone or '' if e else '' }}" maxlength="20"></div>
+    <div><label class="req">권한</label><select name="role">
+      {% for r in ['STAFF', 'OWNER'] %}<option value="{{ r }}" {{ 'selected' if e and e.role == r }}>{{ r|label }}</option>{% endfor %}</select></div>
+    {% if e %}
+    <div><label class="req">사용상태</label><select name="status">
+      <option value="ACTIVE" {{ 'selected' if e.status == 'ACTIVE' }}>활성</option>
+      <option value="INACTIVE" {{ 'selected' if e.status == 'INACTIVE' }}>비활성 (로그인 불가)</option></select></div>
+    {% endif %}
+  </div>
+  <div style="display:flex;gap:8px;margin-top:24px">
+    <button class="btn primary" type="submit">저장</button><a class="btn" href="{{ url_for('admin.employees') }}">취소</a></div>
+</form>
+{% endblock %}
